@@ -54,9 +54,9 @@ resource "aws_security_group" "cg-ec2-http-https-security-group" {
   }
 }
 
-#IAM Role
-resource "aws_iam_role" "cg-ec2-Role" {
-  name = "cg-ec2-Role-${var.cgid}"
+#IAM role
+resource "aws_iam_role" "cg-ec2-role" {
+  name = "cg-ec2-role-${var.cgid}"
   assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -73,7 +73,7 @@ resource "aws_iam_role" "cg-ec2-Role" {
 }
 EOF
   tags = {
-      Name = "cg-ec2-Role-${var.cgid}"
+      Name = "cg-ec2-role-${var.cgid}"
       Stack = "${var.stack-name}"
       Scenario = "${var.scenario-name}"
   }
@@ -81,25 +81,25 @@ EOF
 
 #IAM Role Policy Attachments
 
-resource "aws_iam_role_policy_attachment" "cg-ec2-Role-policy-attachment-ssm-core" {
-  role = "${aws_iam_role.cg-ec2-Role.name}"
+resource "aws_iam_role_policy_attachment" "cg-ec2-role-policy-attachment-ssm-core" {
+  role = "${aws_iam_role.cg-ec2-role.name}"
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
-resource "aws_iam_role_policy_attachment" "cg-ec2-Role-policy-attachment-ssm-patch" {
-  role = "${aws_iam_role.cg-ec2-Role.name}"
+resource "aws_iam_role_policy_attachment" "cg-ec2-role-policy-attachment-ssm-patch" {
+  role = "${aws_iam_role.cg-ec2-role.name}"
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMPatchAssociation"
 }
 
-resource "aws_iam_role_policy_attachment" "cg-ec2-Role-policy-attachment-custom-policy" {
-  role = "${aws_iam_role.cg-ec2-Role.name}"
+resource "aws_iam_role_policy_attachment" "cg-ec2-role-policy-attachment-custom-policy" {
+  role = "${aws_iam_role.cg-ec2-role.name}"
   policy_arn = "${var.cloudwatch_logging_policy_arn}" # Replace with your custom policy ARN
 }
 
 #IAM Instance Profile
 resource "aws_iam_instance_profile" "cg-ec2-instance-profile" {
   name = "cg-ec2-instance-profile-${var.cgid}"
-  role = "${aws_iam_role.cg-ec2-Role.name}"
+  role = "${aws_iam_role.cg-ec2-role.name}"
 }
 
 #EC2 Instance
