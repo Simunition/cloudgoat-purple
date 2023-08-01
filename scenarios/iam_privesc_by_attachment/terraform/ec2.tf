@@ -2,7 +2,7 @@
 resource "aws_security_group" "cg-ec2-ssh-security-group" {
   name = "cg-ec2-ssh-${var.cgid}"
   description = "CloudGoat ${var.cgid} Security Group for EC2 Instance over SSH"
-  vpc_id = "${aws_vpc.cg-vpc.id}"
+  vpc_id = "${var.vpc_id}"
   ingress {
       from_port = 22
       to_port = 22
@@ -26,7 +26,7 @@ resource "aws_security_group" "cg-ec2-ssh-security-group" {
 resource "aws_security_group" "cg-ec2-http-https-security-group" {
   name = "cg-ec2-http-${var.cgid}"
   description = "CloudGoat ${var.cgid} Security Group for EC2 Instance over HTTP"
-  vpc_id = "${aws_vpc.cg-vpc.id}"
+  vpc_id = "${var.vpc_id}"
   ingress {
     from_port = 80
     to_port = 80
@@ -53,12 +53,61 @@ resource "aws_security_group" "cg-ec2-http-https-security-group" {
     Scenario = "${var.scenario-name}"
   }
 }
+
+#IAM Role
+resource "aws_iam_role" "cg-ec2-Role" {
+  name = "cg-ec2-Role-${var.cgid}"
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+  tags = {
+      Name = "cg-ec2-Role-${var.cgid}"
+      Stack = "${var.stack-name}"
+      Scenario = "${var.scenario-name}"
+  }
+}
+
+#IAM Role Policy Attachments
+
+resource "aws_iam_role_policy_attachment" "cg-ec2-Role-policy-attachment-ssm-core" {
+  role = "${aws_iam_role.cg-ec2-Role.name}"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_role_policy_attachment" "cg-ec2-Role-policy-attachment-ssm-patch" {
+  role = "${aws_iam_role.cg-ec2-Role.name}"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMPatchAssociation"
+}
+
+resource "aws_iam_role_policy_attachment" "cg-ec2-Role-policy-attachment-custom-policy" {
+  role = "${aws_iam_role.cg-ec2-Role.name}"
+  policy_arn = "${var.cloudwatch_logging_policy_arn}" # Replace with your custom policy ARN
+}
+
+#IAM Instance Profile
+resource "aws_iam_instance_profile" "cg-ec2-instance-profile" {
+  name = "cg-ec2-instance-profile-${var.cgid}"
+  role = "${aws_iam_role.cg-ec2-Role.name}"
+}
+
 #EC2 Instance
 resource "aws_instance" "cg-super-critical-security-server" {
   ami = "ami-0a313d6098716f372"
   instance_type = "t2.micro"
-  subnet_id = "${aws_subnet.cg-public-subnet.id}"
-  associate_public_ip_address = true
+  iam_instance_profile = "${aws_iam_instance_profile.cg-ec2-instance-profile.name}"
+  subnet_id = "${var.private_subnet_1}"
   vpc_security_group_ids = [
       "${aws_security_group.cg-ec2-ssh-security-group.id}",
       "${aws_security_group.cg-ec2-http-https-security-group.id}"
