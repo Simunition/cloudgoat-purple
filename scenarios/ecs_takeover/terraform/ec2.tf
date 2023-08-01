@@ -26,9 +26,7 @@ resource "aws_instance" "vulnsite" {
   vpc_security_group_ids      = [aws_security_group.ecs_sg.id]
   user_data                   = local.user_data
   instance_type               = "t2.micro"
-  associate_public_ip_address = true
-  subnet_id                   = aws_subnet.public.id
-
+  subnet_id                   = var.private_subnet_1
   tags = {
     "Name" = "cg-${var.scenario-name}-${var.cgid}-vulnsite"
   }
@@ -40,9 +38,7 @@ resource "aws_instance" "vault" {
   vpc_security_group_ids      = [aws_security_group.ecs_sg.id]
   user_data                   = local.user_data
   instance_type               = "t2.micro"
-  associate_public_ip_address = true
-  subnet_id                   = aws_subnet.public.id
-
+  subnet_id                   = var.private_subnet_1
   tags = {
     "Name" = "cg-${var.scenario-name}-${var.cgid}-vault"
   }

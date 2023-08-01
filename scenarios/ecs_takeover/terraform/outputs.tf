@@ -1,5 +1,5 @@
 output "vuln-site" {
-  value = aws_instance.vulnsite.public_dns
+  value = aws_instance.vulnsite.private_dns
 }
 
 output "Start-Note" {
