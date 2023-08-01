@@ -44,7 +44,7 @@ resource "aws_iam_policy" "cg-ec2-role-policy" {
 }
 POLICY
 }
-#IAM Role Policy Attachment
+#IAM Role Policy Attachments
 resource "aws_iam_policy_attachment" "cg-ec2-role-policy-attachment" {
   name = "cg-ec2-role-policy-attachment-${var.cgid}"
   roles = [
@@ -52,6 +52,21 @@ resource "aws_iam_policy_attachment" "cg-ec2-role-policy-attachment" {
   ]
   policy_arn = "${aws_iam_policy.cg-ec2-role-policy.arn}"
 }
+resource "aws_iam_role_policy_attachment" "cg-ec2-role-policy-attachment-ssm-core" {
+  role = "${aws_iam_role.cg-ec2-role.name}"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_role_policy_attachment" "cg-ec2-role-policy-attachment-ssm-patch" {
+  role = "${aws_iam_role.cg-ec2-role.name}"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMPatchAssociation"
+}
+
+resource "aws_iam_role_policy_attachment" "cg-ec2-role-policy-attachment-custom-policy" {
+  role = "${aws_iam_role.cg-ec2-role.name}"
+  policy_arn = "${var.cloudwatch_logging_policy_arn}" # Replace with your custom policy ARN
+}
+
 #IAM Instance Profile
 resource "aws_iam_instance_profile" "cg-ec2-instance-profile" {
   name = "cg-ec2-instance-profile-${var.cgid}"
@@ -61,7 +76,7 @@ resource "aws_iam_instance_profile" "cg-ec2-instance-profile" {
 resource "aws_security_group" "cg-ec2-ssh-security-group" {
   name = "cg-ec2-ssh-${var.cgid}"
   description = "CloudGoat ${var.cgid} Security Group for EC2 Instance over SSH"
-  vpc_id = "${aws_vpc.cg-vpc.id}"
+  vpc_id = "${var.vpc_id}"
   ingress {
       from_port = 22
       to_port = 22
@@ -92,8 +107,7 @@ resource "aws_instance" "cg-ubuntu-ec2" {
     ami = "ami-0a313d6098716f372"
     instance_type = "t2.micro"
     iam_instance_profile = "${aws_iam_instance_profile.cg-ec2-instance-profile.name}"
-    subnet_id = "${aws_subnet.cg-public-subnet-1.id}"
-    associate_public_ip_address = true
+    subnet_id = "${var.private_subnet_1}"
     vpc_security_group_ids = [
         "${aws_security_group.cg-ec2-ssh-security-group.id}"
     ]
