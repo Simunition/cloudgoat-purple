@@ -2,7 +2,7 @@
 resource "aws_security_group" "cg-lb-http-security-group" {
   name = "cg-lb-http-${local.cgid_suffix}"
   description = "CloudGoat ${var.cgid} Security Group for Application Load Balancer over HTTP"
-  vpc_id = "${aws_vpc.cg-vpc.id}"
+  vpc_id = "${var.vpc_id}"
   ingress {
       from_port = 80
       to_port = 80
@@ -38,8 +38,8 @@ resource "aws_lb" "cg-lb" {
       "${aws_security_group.cg-lb-http-security-group.id}"
   ]
   subnets = [
-      "${aws_subnet.cg-public-subnet-1.id}",
-      "${aws_subnet.cg-public-subnet-2.id}"
+      "${var.public_subnet_1}",
+      "${var.public_subnet_2}"
   ]
   tags = {
       Name = "cg-lb-${var.cgid}"
@@ -53,7 +53,7 @@ resource "aws_lb_target_group" "cg-target-group" {
   name = "cg-tg-${local.cgid_suffix}"
   port = 9000
   protocol = "HTTP"
-  vpc_id = "${aws_vpc.cg-vpc.id}"
+  vpc_id = "${var.vpc_id}"
   target_type = "instance"
   tags = {
     Name = "cg-target-group-${local.cgid_suffix}"
