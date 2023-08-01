@@ -23,10 +23,25 @@ EOF
   }
 }
 
-#IAM Role Policy Attachment
+#IAM Role Policy Attachments
 resource "aws_iam_role_policy_attachment" "cg-banking-WAF-Role-policy-attachment-s3" {
   role = "${aws_iam_role.cg-banking-WAF-Role.name}"
   policy_arn = "${data.aws_iam_policy.s3-full-access.arn}"
+}
+
+resource "aws_iam_role_policy_attachment" "cg-banking-WAF-Role-policy-attachment-ssm-core" {
+  role = "${aws_iam_role.cg-banking-WAF-Role.name}"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_role_policy_attachment" "cg-banking-WAF-Role-policy-attachment-ssm-patch" {
+  role = "${aws_iam_role.cg-banking-WAF-Role.name}"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMPatchAssociation"
+}
+
+resource "aws_iam_role_policy_attachment" "cg-banking-WAF-Role-policy-attachment-custom-policy" {
+  role = "${aws_iam_role.cg-banking-WAF-Role.name}"
+  policy_arn = "${var.cloudwatch_logging_policy_arn}" # Replace with your custom policy ARN
 }
 
 #IAM Instance Profile
@@ -39,7 +54,7 @@ resource "aws_iam_instance_profile" "cg-ec2-instance-profile" {
 resource "aws_security_group" "cg-ec2-ssh-security-group" {
   name = "cg-ec2-ssh-${var.cgid}"
   description = "CloudGoat ${var.cgid} Security Group for EC2 Instance over SSH"
-  vpc_id = "${aws_vpc.cg-vpc.id}"
+  vpc_id = "${var.vpc_id}"
   ingress {
       from_port = 22
       to_port = 22
@@ -63,7 +78,7 @@ resource "aws_security_group" "cg-ec2-ssh-security-group" {
 resource "aws_security_group" "cg-ec2-http-security-group" {
   name = "cg-ec2-http-${var.cgid}"
   description = "CloudGoat ${var.cgid} Security Group for EC2 Instance over HTTP"
-  vpc_id = "${aws_vpc.cg-vpc.id}"
+  vpc_id = "${var.vpc_id}"
   ingress {
       from_port = 80
       to_port = 80
@@ -94,7 +109,7 @@ resource "aws_instance" "ec2-vulnerable-proxy-server" {
     ami = "ami-0a313d6098716f372"
     instance_type = "t2.micro"
     iam_instance_profile = "${aws_iam_instance_profile.cg-ec2-instance-profile.name}"
-    subnet_id = "${aws_subnet.cg-public-subnet-1.id}"
+    subnet_id = "${var.private_subnet_1}"
     associate_public_ip_address = true
     vpc_security_group_ids = [
         "${aws_security_group.cg-ec2-ssh-security-group.id}",
@@ -113,7 +128,7 @@ resource "aws_instance" "ec2-vulnerable-proxy-server" {
         type = "ssh"
         user = "ubuntu"
         private_key = "${file(var.ssh-private-key-for-ec2)}"
-        host = self.public_ip
+        host = self.private_ip
       }
     }
     user_data = <<-EOF
